@@ -1,0 +1,187 @@
+/**
+ * Main App Component
+ * Root component with routing
+ */
+
+import { useState, useEffect } from 'react';
+import { authService } from './services/authService';
+import { taskService } from './services/taskService';
+import { Task, TaskStatus, TaskPriority } from './types/task';
+import './App.css';
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    if (authService.isAuthenticated()) {
+      try {
+        await authService.getCurrentUser();
+        setIsAuthenticated(true);
+        await loadTasks();
+      } catch (err) {
+        authService.logout();
+        setIsAuthenticated(false);
+      }
+    }
+    setLoading(false);
+  };
+
+  const loadTasks = async () => {
+    try {
+      const data = await taskService.getTasks();
+      setTasks(data);
+    } catch (err) {
+      console.error('Failed to load tasks:', err);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    try {
+      await authService.login({ email, password });
+      setIsAuthenticated(true);
+      await loadTasks();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Login failed');
+    }
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setIsAuthenticated(false);
+    setTasks([]);
+  };
+
+  const getStatusColor = (status: TaskStatus) => {
+    switch (status) {
+      case TaskStatus.TODO:
+        return '#6c757d';
+      case TaskStatus.IN_PROGRESS:
+        return '#0d6efd';
+      case TaskStatus.DONE:
+        return '#198754';
+      default:
+        return '#6c757d';
+    }
+  };
+
+  const getPriorityColor = (priority: TaskPriority) => {
+    switch (priority) {
+      case TaskPriority.LOW:
+        return '#0dcaf0';
+      case TaskPriority.MEDIUM:
+        return '#ffc107';
+      case TaskPriority.HIGH:
+        return '#fd7e14';
+      case TaskPriority.CRITICAL:
+        return '#dc3545';
+      default:
+        return '#6c757d';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="app">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app">
+        <div className="login-container">
+          <h1>Task Management System</h1>
+          <form onSubmit={handleLogin} className="login-form">
+            <h2>Login</h2>
+            {error && <div className="error">{error}</div>}
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button type="submit">Login</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>Task Management System</h1>
+        <button onClick={handleLogout} className="logout-btn">
+          Logout
+        </button>
+      </header>
+
+      <main className="app-main">
+        <div className="tasks-header">
+          <h2>Tasks ({tasks.length})</h2>
+          <button className="btn-primary">+ New Task</button>
+        </div>
+
+        <div className="tasks-grid">
+          {tasks.length === 0 ? (
+            <div className="empty-state">
+              <p>No tasks yet. Create your first task!</p>
+            </div>
+          ) : (
+            tasks.map((task) => (
+              <div key={task.id} className="task-card">
+                <div className="task-header">
+                  <h3>{task.title}</h3>
+                  <span
+                    className="task-priority"
+                    style={{ backgroundColor: getPriorityColor(task.priority) }}
+                  >
+                    {task.priority}
+                  </span>
+                </div>
+                {task.description && (
+                  <p className="task-description">{task.description}</p>
+                )}
+                <div className="task-footer">
+                  <span
+                    className="task-status"
+                    style={{ backgroundColor: getStatusColor(task.status) }}
+                  >
+                    {task.status.replace('_', ' ')}
+                  </span>
+                  <span className="task-date">
+                    {new Date(task.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default App;
+
+// Made with Bob
