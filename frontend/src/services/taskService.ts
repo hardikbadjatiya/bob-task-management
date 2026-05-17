@@ -23,7 +23,7 @@ export const taskService = {
       if (filters.limit !== undefined) params.append('limit', filters.limit.toString());
     }
 
-    const response = await api.get<Task[]>(`/api/v1/tasks/?${params.toString()}`);
+    const response = await api.get<Task[]>(`/tasks/?${params.toString()}`);
     return response.data;
   },
 
@@ -31,7 +31,7 @@ export const taskService = {
    * Get a single task by ID
    */
   async getTask(taskId: number): Promise<Task> {
-    const response = await api.get<Task>(`/api/v1/tasks/${taskId}`);
+    const response = await api.get<Task>(`/tasks/${taskId}`);
     return response.data;
   },
 
@@ -39,7 +39,7 @@ export const taskService = {
    * Create a new task
    */
   async createTask(taskData: TaskCreate): Promise<Task> {
-    const response = await api.post<Task>('/api/v1/tasks/', taskData);
+    const response = await api.post<Task>('/tasks/', taskData);
     return response.data;
   },
 
@@ -47,7 +47,7 @@ export const taskService = {
    * Update an existing task
    */
   async updateTask(taskId: number, taskData: TaskUpdate): Promise<Task> {
-    const response = await api.put<Task>(`/api/v1/tasks/${taskId}`, taskData);
+    const response = await api.put<Task>(`/tasks/${taskId}`, taskData);
     return response.data;
   },
 
@@ -55,7 +55,7 @@ export const taskService = {
    * Delete a task
    */
   async deleteTask(taskId: number): Promise<void> {
-    await api.delete(`/api/v1/tasks/${taskId}`);
+    await api.delete(`/tasks/${taskId}`);
   },
 };
 

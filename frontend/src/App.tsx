@@ -121,6 +121,11 @@ function App() {
               required
             />
             <button type="submit">Login</button>
+            <div className="demo-credentials" style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', color: '#333', borderRadius: '5px', textAlign: 'center', fontSize: '14px', border: '1px dashed #ccc' }}>
+              <p style={{ margin: '0 0 5px' }}><strong>Hackathon Demo Credentials:</strong></p>
+              <p style={{ margin: 0 }}>Email: <code>demo@example.com</code></p>
+              <p style={{ margin: 0 }}>Password: <code>Demo123!</code></p>
+            </div>
           </form>
         </div>
       </div>

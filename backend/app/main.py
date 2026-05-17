@@ -67,6 +67,26 @@ async def startup_event():
     """Initialize application on startup"""
     # Initialize database tables
     init_db()
+    
+    # Create demo user if it doesn't exist
+    from app.database import SessionLocal
+    from app.models.user import User
+    from app.core.security import get_password_hash
+    
+    db = SessionLocal()
+    try:
+        if not db.query(User).filter(User.email == "demo@example.com").first():
+            demo_user = User(
+                email="demo@example.com",
+                hashed_password=get_password_hash("Demo123!"),
+                full_name="Demo User",
+                is_active=True
+            )
+            db.add(demo_user)
+            db.commit()
+    finally:
+        db.close()
+
     logger.info(f"🚀 {settings.APP_NAME} v{settings.APP_VERSION} started")
     logger.info(f"📚 API Documentation: http://localhost:8000/api/docs")
     logger.info(f"🔒 Security headers enabled")
