@@ -129,7 +129,12 @@ async def refresh_token(
     if payload is None or payload.get("type") != "refresh":
         raise UnauthorizedException(detail="Invalid refresh token")
     
-    user_id = payload.get("sub")
+    try:
+        user_id_val = payload.get("sub")
+        user_id = int(user_id_val) if user_id_val is not None else None
+    except (ValueError, TypeError):
+        raise UnauthorizedException(detail="Invalid refresh token")
+        
     if user_id is None:
         raise UnauthorizedException(detail="Invalid refresh token")
     

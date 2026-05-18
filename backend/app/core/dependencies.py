@@ -50,7 +50,12 @@ async def get_current_user(
         raise credentials_exception
     
     # Extract user info
-    user_id: Optional[int] = payload.get("sub")
+    try:
+        user_id_val = payload.get("sub")
+        user_id = int(user_id_val) if user_id_val is not None else None
+    except (ValueError, TypeError):
+        raise credentials_exception
+        
     if user_id is None:
         raise credentials_exception
     

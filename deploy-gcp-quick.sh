@@ -29,7 +29,7 @@ gcloud run deploy task-frontend-quick --source . \
   --project=$PROJECT_ID \
   --allow-unauthenticated \
   --port=3000 \
-  --set-env-vars="VITE_API_URL=$BACKEND_URL"
+  --set-env-vars="VITE_API_URL=$BACKEND_URL/api/v1"
 
 FRONTEND_URL=$(gcloud run services describe task-frontend-quick --region=$REGION --project=$PROJECT_ID --format="value(status.url)")
 

@@ -53,6 +53,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         The encoded JWT token
     """
     to_encode = data.copy()
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
     
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -75,6 +77,9 @@ def create_refresh_token(data: dict) -> str:
         The encoded JWT refresh token
     """
     to_encode = data.copy()
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
+        
     expire = datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
