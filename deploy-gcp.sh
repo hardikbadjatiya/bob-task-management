@@ -4,6 +4,10 @@ set -e
 PROJECT_ID="hardik-prompt-wars"
 REGION="us-central1"
 
+# Generate secure random password for database
+DB_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
+echo "Generated secure database password"
+
 echo "====================================="
 echo "Starting GCP Deployment for Bob Task Management"
 echo "====================================="
@@ -42,13 +46,22 @@ while true; do
 done
 
 echo "Configuring Cloud SQL database and user..."
-gcloud sql users set-password postgres --instance=task-postgres --password=taskpass --project=$PROJECT_ID || true
+gcloud sql users set-password postgres --instance=task-postgres --password="$DB_PASSWORD" --project=$PROJECT_ID || true
 gcloud sql databases create taskdb --instance=task-postgres --project=$PROJECT_ID || true
-gcloud sql users create taskuser --instance=task-postgres --password=taskpass --project=$PROJECT_ID || true
+gcloud sql users create taskuser --instance=task-postgres --password="$DB_PASSWORD" --project=$PROJECT_ID || true
+
+# Store password in Secret Manager for secure access
+echo "Storing database password in Secret Manager..."
+echo -n "$DB_PASSWORD" | gcloud secrets create task-db-password --data-file=- --project=$PROJECT_ID 2>/dev/null || \
+echo -n "$DB_PASSWORD" | gcloud secrets versions add task-db-password --data-file=- --project=$PROJECT_ID
 
 # 3. Deploy Backend
 echo "[3/4] Deploying Backend to Cloud Run..."
 cd /Users/hardik/Downloads/bob-task-management/backend
+
+# Generate secure SECRET_KEY
+SECRET_KEY=$(openssl rand -base64 32)
+
 gcloud run deploy task-backend --source . \
   --region=$REGION \
   --project=$PROJECT_ID \
@@ -57,7 +70,8 @@ gcloud run deploy task-backend --source . \
   --network=default \
   --subnet=default \
   --port=8000 \
-  --set-env-vars="DATABASE_URL=postgresql+psycopg2://taskuser:taskpass@/taskdb?host=/cloudsql/$PROJECT_ID:$REGION:task-postgres,REDIS_URL=redis://$REDIS_IP:$REDIS_PORT/0,SECRET_KEY=production_secret_key"
+  --set-env-vars="DATABASE_URL=postgresql+psycopg2://taskuser:$DB_PASSWORD@/taskdb?host=/cloudsql/$PROJECT_ID:$REGION:task-postgres,REDIS_URL=redis://$REDIS_IP:$REDIS_PORT/0,SECRET_KEY=$SECRET_KEY" \
+  --set-secrets="DB_PASSWORD=task-db-password:latest"
 
 BACKEND_URL=$(gcloud run services describe task-backend --region=$REGION --project=$PROJECT_ID --format="value(status.url)")
 echo "Backend deployed at $BACKEND_URL"
